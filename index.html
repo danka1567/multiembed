@@ -397,19 +397,32 @@
 
             try {
                 const response = await fetch(fullUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
+                
+                // Log response for debugging
+                console.log('API Response:', data);
 
                 displayResult(data);
             } catch (error) {
+                console.error('Fetch error:', error);
                 resultDiv.innerHTML = `
                     <div class="error-message">
                         <strong>Error:</strong> ${error.message}
                         <br><br>
+                        <strong>Request URL:</strong><br>
+                        <code style="word-break: break-all; display: block; margin-top: 5px; background: white; padding: 8px; border-radius: 4px;">${fullUrl}</code>
+                        <br>
                         <strong>Tips:</strong>
                         <ul style="margin-left: 20px; margin-top: 10px;">
                             <li>Make sure your API server is running</li>
                             <li>Check if the API URL is correct</li>
                             <li>Verify CORS is enabled on your server</li>
+                            <li>Open browser console (F12) for more details</li>
                         </ul>
                     </div>
                 `;
@@ -428,8 +441,15 @@
             let html = '<div class="result-item">';
             html += `<h4>Status</h4>`;
             html += `<span class="status ${data.ok ? 'success' : 'error'}">${data.ok ? 'Success' : 'Failed'}</span> `;
-            html += `<span style="color: #666; margin-left: 10px;">${data.status}</span>`;
+            html += `<span style="color: #666; margin-left: 10px;">${data.status || 'N/A'}</span>`;
             html += '</div>';
+
+            // Debug info (can be removed later)
+            if (!data.ok && data.error) {
+                html += '<div class="error-message">';
+                html += `<strong>Error:</strong> ${data.error}`;
+                html += '</div>';
+            }
 
             // Stream URLs
             if (data.stream_urls && data.stream_urls.length > 0) {
