@@ -286,7 +286,7 @@
         <div class="card">
             <div class="input-group">
                 <label for="apiUrl">API Endpoint URL</label>
-                <input type="text" id="apiUrl" placeholder="https://your-api-server.com" value="">
+                <input type="text" id="apiUrl" placeholder="https://your-api-server.com" value="https://multiembed-resolver.narutoanimeinspirationquote.workers.dev">
             </div>
 
             <div class="input-group">
@@ -339,10 +339,17 @@
         const loadingDiv = document.getElementById('loadingDiv');
         const resultDiv = document.getElementById('resultDiv');
 
-        // Load saved API URL from localStorage
+        // Auto-detect API URL from GitHub Pages or use default
+        const defaultApiUrl = 'https://multiembed-resolver.workers.dev'; // Update this after deploying worker
+        
+        // Load saved API URL from localStorage or use default
         const savedApiUrl = localStorage.getItem('apiUrl');
         if (savedApiUrl) {
             apiUrlInput.value = savedApiUrl;
+        } else if (!apiUrlInput.value) {
+            apiUrlInput.value = 'https://multiembed-resolver.narutoanimeinspirationquote.workers.dev';
+        } else {
+            apiUrlInput.value = defaultApiUrl;
         }
 
         // Save API URL to localStorage when changed
