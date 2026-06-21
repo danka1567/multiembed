@@ -1,0 +1,5 @@
+# Core dependencies (no external packages needed for basic functionality)
+# The script uses only Python standard library for basic HTTP operations
+
+# Optional: For advanced browser-based collection
+# playwright>=1.40.0

@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MultiEmbed Stream Resolver</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            margin-top: 20px;
+        }
+
+        .result h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .result-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result-item h4 {
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .url-list {
+            list-style: none;
+        }
+
+        .url-list li {
+            background: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 6px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .url-list a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .url-list a:hover {
+            text-decoration: underline;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #dc3545;
+        }
+
+        .steps {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .steps ol {
+            margin-left: 20px;
+        }
+
+        .steps li {
+            margin: 5px 0;
+            color: #555;
+        }
+
+        .api-info {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .api-info h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .api-info code {
+            background: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .options {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 MultiEmbed Stream Resolver</h1>
+            <p>Resolve embed URLs to stream links</p>
+        </div>
+
+        <div class="card api-info">
+            <h4>⚙️ API Configuration</h4>
+            <p>Enter your API endpoint URL below (where your Python server is running):</p>
+        </div>
+
+        <div class="card">
+            <div class="input-group">
+                <label for="apiUrl">API Endpoint URL</label>
+                <input type="text" id="apiUrl" placeholder="https://your-api-server.com" value="">
+            </div>
+
+            <div class="input-group">
+                <label for="embedUrl">Embed URL to Resolve</label>
+                <input type="text" id="embedUrl" placeholder="https://multiembed.mov/?video_id=280&tmdb=1" 
+                       value="https://multiembed.mov/?video_id=280&tmdb=1">
+            </div>
+
+            <div class="input-group">
+                <label for="serverId">Preferred Server ID (Optional)</label>
+                <select id="serverId">
+                    <option value="">Auto-select best server</option>
+                    <option value="89">Server 89</option>
+                    <option value="88">Server 88</option>
+                    <option value="90">Server 90</option>
+                    <option value="92">Server 92</option>
+                    <option value="91">Server 91</option>
+                </select>
+            </div>
+
+            <div class="options">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="useLive" checked>
+                    <label for="useLive">Use Live HTTP</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="useCapture" checked>
+                    <label for="useCapture">Use Capture Fallback</label>
+                </div>
+            </div>
+
+            <button class="btn" id="resolveBtn">🔍 Resolve Stream</button>
+
+            <div id="loadingDiv" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Resolving stream URLs...</p>
+            </div>
+
+            <div id="resultDiv" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const apiUrlInput = document.getElementById('apiUrl');
+        const embedUrlInput = document.getElementById('embedUrl');
+        const serverIdSelect = document.getElementById('serverId');
+        const useLiveCheckbox = document.getElementById('useLive');
+        const useCaptureCheckbox = document.getElementById('useCapture');
+        const resolveBtn = document.getElementById('resolveBtn');
+        const loadingDiv = document.getElementById('loadingDiv');
+        const resultDiv = document.getElementById('resultDiv');
+
+        // Load saved API URL from localStorage
+        const savedApiUrl = localStorage.getItem('apiUrl');
+        if (savedApiUrl) {
+            apiUrlInput.value = savedApiUrl;
+        }
+
+        // Save API URL to localStorage when changed
+        apiUrlInput.addEventListener('change', () => {
+            localStorage.setItem('apiUrl', apiUrlInput.value);
+        });
+
+        resolveBtn.addEventListener('click', async () => {
+            const apiUrl = apiUrlInput.value.trim();
+            const embedUrl = embedUrlInput.value.trim();
+            const serverId = serverIdSelect.value;
+            const useLive = useLiveCheckbox.checked ? '1' : '0';
+            const useCapture = useCaptureCheckbox.checked ? '1' : '0';
+
+            if (!apiUrl) {
+                alert('Please enter your API endpoint URL');
+                return;
+            }
+
+            if (!embedUrl) {
+                alert('Please enter an embed URL to resolve');
+                return;
+            }
+
+            // Save API URL
+            localStorage.setItem('apiUrl', apiUrl);
+
+            // Build query string
+            const params = new URLSearchParams({
+                url: embedUrl,
+                live: useLive,
+                capture: useCapture
+            });
+
+            if (serverId) {
+                params.append('server', serverId);
+            }
+
+            const fullUrl = `${apiUrl}/resolve?${params.toString()}`;
+
+            // Show loading
+            loadingDiv.style.display = 'block';
+            resultDiv.innerHTML = '';
+            resolveBtn.disabled = true;
+
+            try {
+                const response = await fetch(fullUrl);
+                const data = await response.json();
+
+                displayResult(data);
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error-message">
+                        <strong>Error:</strong> ${error.message}
+                        <br><br>
+                        <strong>Tips:</strong>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>Make sure your API server is running</li>
+                            <li>Check if the API URL is correct</li>
+                            <li>Verify CORS is enabled on your server</li>
+                        </ul>
+                    </div>
+                `;
+            } finally {
+                loadingDiv.style.display = 'none';
+                resolveBtn.disabled = false;
+            }
+        });
+
+        function displayResult(data) {
+            if (!data) {
+                resultDiv.innerHTML = '<div class="error-message">No data received</div>';
+                return;
+            }
+
+            let html = '<div class="result-item">';
+            html += `<h4>Status</h4>`;
+            html += `<span class="status ${data.ok ? 'success' : 'error'}">${data.ok ? 'Success' : 'Failed'}</span> `;
+            html += `<span style="color: #666; margin-left: 10px;">${data.status}</span>`;
+            html += '</div>';
+
+            // Stream URLs
+            if (data.stream_urls && data.stream_urls.length > 0) {
+                html += '<div class="result-item">';
+                html += `<h4>🎥 Stream URLs (${data.stream_urls.length})</h4>`;
+                html += '<ul class="url-list">';
+                data.stream_urls.forEach(url => {
+                    html += `<li><a href="${url}" target="_blank">${url}</a></li>`;
+                });
+                html += '</ul>';
+                html += '</div>';
+            }
+
+            // Embed URLs
+            if (data.embed_urls && data.embed_urls.length > 0) {
+                html += '<div class="result-item">';
+                html += `<h4>🔗 Embed URLs (${data.embed_urls.length})</h4>`;
+                html += '<ul class="url-list">';
+                data.embed_urls.forEach(url => {
+                    html += `<li><a href="${url}" target="_blank">${url}</a></li>`;
+                });
+                html += '</ul>';
+                html += '</div>';
+            }
+
+            // Sources
+            if (data.sources && data.sources.length > 0) {
+                html += '<div class="result-item">';
+                html += `<h4>📡 Available Sources (${data.sources.length})</h4>`;
+                html += '<ul class="url-list">';
+                data.sources.forEach(source => {
+                    html += `<li>Server ${source.server_id} - Video ${source.video_id} ${source.quality ? `(${source.quality})` : ''} ${source.label ? `- ${source.label}` : ''}</li>`;
+                });
+                html += '</ul>';
+                html += '</div>';
+            }
+
+            // Play URL
+            if (data.play_url) {
+                html += '<div class="result-item">';
+                html += `<h4>▶️ Play URL</h4>`;
+                html += `<ul class="url-list"><li><a href="${data.play_url}" target="_blank">${data.play_url}</a></li></ul>`;
+                html += '</div>';
+            }
+
+            // Steps
+            if (data.steps && data.steps.length > 0) {
+                html += '<div class="steps">';
+                html += '<h4 style="color: #555; margin-bottom: 10px;">Processing Steps</h4>';
+                html += '<ol>';
+                data.steps.forEach(step => {
+                    html += `<li>${step}</li>`;
+                });
+                html += '</ol>';
+                html += '</div>';
+            }
+
+            // Errors
+            if (data.errors && data.errors.length > 0) {
+                html += '<div class="error-message">';
+                html += '<strong>Errors:</strong><ul style="margin-left: 20px; margin-top: 10px;">';
+                data.errors.forEach(error => {
+                    html += `<li>${error}</li>`;
+                });
+                html += '</ul></div>';
+            }
+
+            resultDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
